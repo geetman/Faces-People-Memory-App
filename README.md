@@ -1,13 +1,17 @@
-# Faces The People Memory App
-Faces is a mobile-first progressive web app built for the surprisingly large number of people who struggle to remember names, faces, or both.
+# 𝓕 Faces — People Memory App
 
-Most people assume forgetting a name or failing to recognise someone is just carelessness or poor social skills. The research tells a different story. Around 15% of the general population carry minor autistic traits that affect how they process faces, not through any obvious disability, but through a subtle difference in how their brain handles visual recognition. Instead of reading a face as a whole, the way most people do instinctively, their brain pieces it together from parts: the shape of a nose, a distinctive pair of glasses, the way someone walks. This works well in familiar settings and completely falls apart the moment that person shows up somewhere unexpected.
+> Never forget a face, a name, or a story again.
+By Krishaang Kaushik & Nanometer Horizon
 
-Name recall follows a separate pattern, and it maps almost entirely onto ADHD traits rather than autistic ones. Clinical research puts chronic name-recall difficulty at somewhere between 50 and 60 percent among people with subclinical ADHD, rising to 70 to 80 percent in those with a formal diagnosis. The reason is not a bad memory in the general sense. It is that during an introduction, the ADHD brain is already busy: reading the room, tracking the other person's tone, noticing something across the room. A name is a meaningless label with no emotional weight attached to it, so it never gets encoded in the first place. The face sticks. The whole conversation sticks. The name never had a chance.
+![GitHub Pages](https://img.shields.io/badge/Deployed%20on-GitHub%20Pages-222222?style=for-the-badge&logo=github)
+![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Vanilla JS](https://img.shields.io/badge/Built%20with-Vanilla%20JS-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-These two failure modes rarely overlap, which is what makes them so easy to miss. The autistic profile tends toward strong verbal and factual memory with weak holistic face processing, roughly one in ten people with minor autistic traits. The ADHD profile is almost the opposite: strong visual and emotional memory with a specific, repeatable failure to retain names, roughly one in five people with ADHD traits. Both groups function well enough day to day that the gap goes unnoticed by everyone around them, including sometimes themselves. They have learned to work around it: using context, clothing, voice, or haircut to identify people, and relying on "hey you" more than anyone would care to admit.
+---
 
-Faces is built for both groups. It gives you a structured place to record what your brain actually does hold onto, the face, the context, the memory hook, the voice, and builds the name connection deliberately and on your own terms.
+Faces is a mobile-first progressive web app that helps you remember the people in your life — their names, nicknames, categories, tags, voice memos, and a full encounter timeline. Built with vanilla JS and Supabase as the backend.
 
 ---
 
@@ -51,35 +55,65 @@ cd faces-app
 
 Or download the ZIP from GitHub and extract it.
 
-You should have these three files:
+You should have these four files:
 ```
 index.html
 style.css
 script.js
+supabase_setup.sql
 ```
 
 ---
 
 ### 2. Set Up Supabase
 
-1. Go to [supabase.com](https://supabase.com) and create a free account
-2. Click **New Project** and give it a name (e.g. `faces`)
-3. Choose a region close to you and set a database password (save it somewhere)
-4. Wait for the project to provision (~1 minute)
-5. In the left sidebar go to **SQL Editor**
-6. Click **New Query**
-7. Copy the entire contents of `supabase_setup.sql` and paste it in
-8. Click **Run**
+#### What is `supabase_setup.sql`?
 
-You should see all tables created: `categories`, `people`, `person_connections`, `encounter_timeline`, `app_config`.
+The repo includes a file called `supabase_setup.sql`. This is a ready-to-run SQL script that sets up your entire database in one go. It:
+
+- Drops any existing Faces tables so you start clean
+- Creates all 5 tables (`categories`, `people`, `person_connections`, `encounter_timeline`, `app_config`)
+- Seeds the default categories (Family, Friend, Work, etc.) with their colours
+- Inserts the default app passphrase (`change-me-now`)
+- Enables Row Level Security on every table and applies the correct access policies
+
+> [!CAUTION]
+> This script **wipes and recreates** all Faces tables at the top (`drop table if exists … cascade`). Only run it on a fresh project, or if you are happy to lose existing data.
+
+#### Running the Script
+
+1. Go to [supabase.com](https://supabase.com) and create a free account
+2. Click **New Project**, give it a name (e.g. `faces`), choose a region close to you, and set a database password — save it somewhere safe
+3. Wait for the project to provision (~1 minute)
+4. In the left sidebar go to **SQL Editor**
+5. Click **New Query**
+6. Open `supabase_setup.sql` from your local copy of the repo, select all the text, and paste it into the editor
+7. Click **Run**
+
+> [!NOTE]
+> If everything worked you will see all 5 tables appear in the left sidebar under **Table Editor**: `categories`, `people`, `person_connections`, `encounter_timeline`, `app_config`.
 
 #### Change Your App Password
 
-The default passphrase is `change-me-now`. To change it, run this in the SQL Editor:
+> [!CAUTION]
+> The default passphrase is `change-me-now`. **Do not leave it as the default** — anyone who finds your app URL will be able to get in.
+
+To change it, go to **SQL Editor** in your Supabase project, click **New Query**, and run:
 
 ```sql
 update app_config set value = 'your-new-passphrase' where key = 'app_password';
 ```
+
+Replace `your-new-passphrase` with whatever you want your password to be, then click **Run**.
+
+> [!TIP]
+> To double-check what your current passphrase is set to, run this in the SQL Editor:
+> ```sql
+> select value from app_config where key = 'app_password';
+> ```
+
+> [!NOTE]
+> This passphrase is stored in plain text in your database and checked client-side. It is a lightweight lock to keep casual visitors out — not a substitute for full authentication. See the security section below if you need stronger protection.
 
 #### Get Your Supabase Credentials
 
@@ -105,7 +139,8 @@ const SUPABASE_URL  = 'https://xxxxxxxxxxxx.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
 ```
 
-> ⚠️ The anon key is safe to expose in frontend code — it is public by design. Your data is protected by Row Level Security (RLS) policies, not by keeping this key secret.
+> [!NOTE]
+> The anon key is safe to expose in frontend code — it is public by design. Your data is protected by Row Level Security (RLS) policies, not by keeping this key secret.
 
 ---
 
@@ -121,7 +156,8 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
    https://YOUR_USERNAME.github.io/REPO_NAME/
    ```
 
-> 💡 Every time you push changes to the main branch, GitHub Pages will automatically redeploy.
+> [!TIP]
+> Every time you push changes to the main branch, GitHub Pages will automatically redeploy.
 
 ---
 
@@ -145,7 +181,8 @@ Faces works as a full-screen app on both iOS and Android — no App Store requir
 4. Tap **Add** on the confirmation prompt
 5. The app will appear on your home screen and launch like a native app
 
-> 💡 On Android you may also see an **Install app** banner appear automatically at the bottom of the screen after a few visits.
+> [!TIP]
+> On Android you may also see an **Install app** banner appear automatically at the bottom of the screen after a few visits.
 
 ---
 
@@ -163,7 +200,8 @@ This app uses **Row Level Security (RLS)** on all Supabase tables. Here is what 
 
 The app is protected by a **passphrase** stored in `app_config`. Without the correct passphrase, the app will not unlock and data will not be displayed.
 
-> 🔐 If you want stronger security, you can replace the passphrase system with Supabase Auth (email/password or magic link) and scope RLS policies to `auth.uid()`. This is left as an enhancement for advanced users.
+> [!IMPORTANT]
+> If you want stronger security, replace the passphrase system with Supabase Auth (email/password or magic link) and scope RLS policies to `auth.uid()`. This is left as an enhancement for advanced users.
 
 ---
 
@@ -251,7 +289,8 @@ update app_config set value = 'your-passphrase' where key = 'app_password';
 
 ### 🔴 Photos / voice memos not saving
 
-**Cause:** Supabase has a **row size limit of ~1MB** per row. Large photos or long voice recordings stored as base64 can exceed this.
+> [!WARNING]
+> Supabase has a **row size limit of ~1MB** per row. Large photos or long voice recordings stored as base64 can exceed this.
 
 **Fix:**
 - Photos are already auto-compressed to 300×300px JPEG — avoid taking very high-res photos
@@ -294,7 +333,8 @@ sessionStorage.setItem('faces_auth', '1');
 
 ## Local Development
 
-You cannot open `index.html` directly as a `file://` URL because ES Modules and the Supabase CDN import require HTTP. Use a simple local server:
+> [!CAUTION]
+> You cannot open `index.html` directly as a `file://` URL because ES Modules and the Supabase CDN import require HTTP. Use a simple local server:
 
 ```bash
 # Python 3
@@ -327,8 +367,8 @@ delete from categories where name = 'Acquaintance';
 
 ## License
 
-Licensed under CC BY 4.0 — [https://creativecommons.org/licenses/by/4.0/](https://creativecommons.org/licenses/by/4.0/)
+Licensed under CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
 ---
 
-*Built with ♥ using Supabase + vanilla JS*
+
