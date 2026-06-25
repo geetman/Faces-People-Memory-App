@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0c0e18">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Faces — People Memory App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+<base target="_blank">
+</head>
+<body>
+<div class="texture-overlay"></div>
+
+<!-- ═══ AUTH SCREEN ═══ -->
+<div id="auth-screen">
+  <div class="auth-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+  <div class="auth-card">
+    <div class="auth-icon">𝓕</div>
+    <div class="auth-title">Faces</div>
+    <div class="auth-sub">Don't worry. You can do it.<br>Enter the passphrase to continue.</div>
+    <input class="auth-input" type="password" id="auth-pw-input" placeholder="••••••••" autocomplete="current-password" enterkeyhint="go">
+    <button class="auth-btn" id="auth-btn">Unlock →</button>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app">
+  <div class="app-wave-bg">
+    <svg viewBox="0 0 2880 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path fill="#C4B5FD" d="M0,192L48,186.7C96,181,192,171,288,176C384,181,480,203,576,197.3C672,192,768,160,864,154.7C960,149,1056,171,1152,170.7C1248,171,1344,149,1440,138.7L1440,320L0,320Z"/>
+    </svg>
+    <svg viewBox="0 0 2880 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path fill="#F472B6" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,165.3C1200,160,1320,192,1440,197.3L1440,320L0,320Z"/>
+    </svg>
+    <svg viewBox="0 0 2880 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path fill="#6EE7B7" d="M0,256L80,245.3C160,235,320,213,480,208C640,203,800,213,960,218.7C1120,224,1280,224,1440,213.3L1440,320L0,320Z"/>
+    </svg>
+  </div>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <span class="top-bar-title">Faces</span>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" type="search" id="search-input" placeholder="Search…" enterkeyhint="search">
+    </div>
+    <button class="add-btn" id="open-add-btn" title="Add person">＋</button>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar" id="filter-bar">
+    <button class="filter-pill active" data-cat="all">All</button>
+    <button class="filter-pill fav-pill" data-cat="favourites">⭐ Favourites</button>
+  </div>
+
+  <!-- Loading spinner — shown until data arrives, lives outside the grid -->
+  <div id="cards-loader" style="display:none;justify-content:center;align-items:center;padding:60px 0;">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Cards grid — empty until JS populates it -->
+  <div class="cards-grid" id="cards-container"></div>
+</div>
+
+<!-- ═══ ADD / EDIT MODAL ═══ -->
+<div class="modal-backdrop" id="form-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title" id="form-modal-title">Add Person</span>
+      <button class="modal-close" id="form-modal-close">✕</button>
+    </div>
+    <div class="form-body">
+      <input type="hidden" id="edit-id">
+      <div class="form-group">
+        <label class="form-label">Photo</label>
+        <div class="photo-upload-area" id="photo-upload-area">
+          <input type="file" id="photo-file-input" accept="image/*" capture="environment">
+          <div id="photo-preview-container">
+            <span class="upload-icon">📷</span>
+            <div class="upload-label">Tap to add photo</div>
+            <div class="upload-sub">Their face is the key</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input class="form-input" type="text" id="f-name" placeholder="e.g. Priya Sharma" autocomplete="off" enterkeyhint="next">
+      </div>
+      <div class="form-group">
+        <label class="form-label">What you call them</label>
+        <input class="form-input" type="text" id="f-nick" placeholder="e.g. Pri, the tall one, red jacket" autocomplete="off" enterkeyhint="next">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select class="form-input" id="f-category">
+          <option value="">— choose —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Totem Emoji</label>
+        <div class="totem-picker-wrap">
+          <input class="form-input totem-input" type="text" id="f-totem" placeholder="Pick one below or type any emoji" maxlength="4" readonly>
+          <div class="totem-grid" id="totem-grid"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tags</label>
+        <div class="tag-input-wrap">
+          <div class="tag-chips" id="tag-chips"></div>
+          <input class="form-input tag-text-input" type="text" id="f-tag-input" placeholder="Type a tag and press Enter…" enterkeyhint="next">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Voice Memo <span style="font-weight:400;text-transform:none;font-size:11px;">(max 10 sec)</span></label>
+        <div class="voice-recorder" id="voice-recorder">
+          <button class="voice-record-btn" id="voice-record-btn" type="button">🎙 Hold to Record</button>
+          <div class="voice-status" id="voice-status"></div>
+          <audio id="voice-playback" controls style="display:none;width:100%;margin-top:8px;"></audio>
+          <button class="voice-clear-btn" id="voice-clear-btn" type="button" style="display:none;">✕ Remove memo</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Seen</label>
+        <input class="form-input" type="date" id="f-last-seen">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Memory Hook / Note</label>
+        <textarea class="form-input" id="f-hook" placeholder="e.g. Loves cricket, drives a red car, has a great laugh" enterkeyhint="done"></textarea>
+      </div>
+      <div class="form-group fav-toggle-group">
+        <label class="fav-toggle-label">
+          <input type="checkbox" id="f-favourite">
+          <span class="fav-toggle-ui">⭐ Mark as Favourite</span>
+        </label>
+      </div>
+      <div class="form-group" id="also-known-group" style="display:none;">
+        <label class="form-label">Also Known By</label>
+        <div class="known-by-list" id="known-by-list"></div>
+      </div>
+      <button class="form-submit" id="form-submit-btn">Save Person</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DETAIL MODAL ═══ -->
+<div class="modal-backdrop" id="detail-modal">
+  <div class="modal-sheet" id="detail-content">
+    <div class="modal-handle"></div>
+  </div>
+</div>
+
+<!-- ═══ ADD ENCOUNTER MODAL ═══ -->
+<div class="modal-backdrop" id="encounter-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Log Encounter</span>
+      <button class="modal-close" id="encounter-modal-close">✕</button>
+    </div>
+    <div class="form-body">
+      <input type="hidden" id="enc-person-id">
+      <div class="form-group">
+        <label class="form-label">When</label>
+        <input class="form-input" type="datetime-local" id="enc-time">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Where</label>
+        <input class="form-input" type="text" id="enc-location" placeholder="e.g. Mall, Doctor's office, Family lunch" enterkeyhint="next">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note</label>
+        <textarea class="form-input" id="enc-note" placeholder="What happened? What did they wear?" enterkeyhint="done"></textarea>
+      </div>
+      <button class="form-submit" id="enc-submit-btn">Save Encounter</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast"></div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
